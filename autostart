@@ -1,0 +1,6 @@
+#!/bin/bash 
+
+xrdb -merge ~/.Xresources &
+hsetroot -fill ~/Pictures/free.jpg &
+keynav &
+xcape -e 'Control_L=Escape' &
