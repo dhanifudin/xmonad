@@ -1,6 +1,8 @@
 #!/bin/bash 
 
 xrdb -merge ~/.Xresources &
-hsetroot -fill ~/Pictures/free.jpg &
+hsetroot -fill ~/Pictures/wallpaper.png &
 keynav &
-xcape -e 'Control_L=Escape' &
+polybar &
+
+xcape -e "Control_L=Escape;Shift_L=Shift_L|bracketleft;Alt_L=bracketleft;Super_L=Shift_L|9;Super_R=Shift_R|0;Alt_R=bracketright;Shift_R=Shift_R|bracketright;Control_R=apostrophe" &

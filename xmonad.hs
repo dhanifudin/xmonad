@@ -40,17 +40,17 @@ ppWsSeparator               = ""
 myNormalBorderColor         = "#333333"
 myFocusedBorderColor        = "#0088CC"
 
-myBorderWidth               = 1
+myBorderWidth               = 4
 myModMask                   = mod4Mask
-myTerminal                  = "urxvt"
+myTerminal                  = "terminator"
 myWorkspaces                = ["Q","W","E","R","T","Y","U","I","O", "P"]
 
 myManageHook                = composeAll
     [ className             =? "Telegram"       --> doShift "P"
-    , className             =? "Firefox"        --> doShift "W"
+    , className             =? "firefox"        --> doShift "W"
     ]
 
-myLayoutHook                = onWorkspace "Q" gridLayout $ onWorkspace "W" webLayout $ onWorkspace "R" tabbedLayout $ defaultLayout
+myLayoutHook                = onWorkspace "Q" termLayout $ onWorkspace "W" webLayout $ onWorkspace "R" tabbedLayout $ defaultLayout
     where
         defaultLayout       = avoidStruts ( tall ||| Mirror tall ||| Full )
             where 
@@ -59,7 +59,7 @@ myLayoutHook                = onWorkspace "Q" gridLayout $ onWorkspace "W" webLa
                 ratio       = 2/3
                 delta       = 2/100
 
-        gridLayout          = avoidStruts $ Grid
+        termLayout          = avoidStruts ( Grid ||| Full )
 
         webLayout           = avoidStruts ( Mirror tall ||| tall ||| Full)
             where 
@@ -85,6 +85,8 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((0, 0x1008ff11), spawn "amixer set Master 5%-")
     , ((0, 0x1008ff13), spawn "amixer set Master 5%+")
     , ((modMask, xK_space), spawn "rofi -show run")
+    , ((modMask, xK_s), spawn "scrot --delay 1 ~/Pictures/screenshots/screen_%Y-%m-%d %H-%M-%S.png")
+    , ((modMask .|. shiftMask, xK_s), spawn "scrot --select ~/Pictures/screenshots/window_%Y-%m-%d %H-%M-%S.png")
     , ((modMask, xK_Return), spawn $ XMonad.terminal conf)
     , ((modMask, xK_x), kill)
     , ((modMask, xK_Tab), sendMessage NextLayout)
@@ -118,27 +120,13 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((modMask, button3), (\w -> focus w >> mouseResizeWindow w))
     ]
 
-myLogHook :: Handle -> X ()
-myLogHook h = dynamicLogWithPP $ xmobarPP
-    { ppOutput      		= hPutStrLn h
-    , ppLayout      		= const ""
-    , ppTitle       		= xmobarColor ppTitleFgColor ppTitleBgColor . shorten 80
-    , ppSep         		= xmobarColor ppSepFgColor ppSepBgColor ppSeparator
-    , ppWsSep       		= xmobarColor ppWsSepFgColor ppWsSepBgColor ppWsSeparator
-    , ppCurrent     		= xmobarColor ppCurrentFgColor ppCurrentBgColor . pad
-    , ppUrgent      		= xmobarColor ppUrgentFgColor ppUrgentBgColor . pad
-    , ppHidden      		= xmobarColor ppHiddenFgColor ppHiddenBgColor . pad
-    , ppHiddenNoWindows      	= xmobarColor ppHiddenFgColor ppHiddenBgColor . pad
-    }
-
 myStartupHook :: X ()
 myStartupHook = do 
     setDefaultCursor xC_left_ptr >> setWMName "LG3D"
     spawn "~/.xmonad/autostart"
 
 main = do
-    workspaceBar                <- spawnPipe "xmobar ~/.xmonad/xmobar.hs"
-    xmonad $ docks defaultConfig 
+    xmonad $ docks $ ewmh def 
         { terminal              = myTerminal
         , borderWidth           = myBorderWidth
         , focusFollowsMouse     = myFocusFollowsMouse
@@ -148,7 +136,7 @@ main = do
         , focusedBorderColor    = myFocusedBorderColor
         , keys                  = myKeys
         , mouseBindings         = myMouseBindings
-        , logHook               = (myLogHook workspaceBar)
+        , logHook               = ewmhDesktopsLogHook
         , layoutHook            = myLayoutHook
         , manageHook            = manageDocks <+> myManageHook
         , startupHook           = myStartupHook
