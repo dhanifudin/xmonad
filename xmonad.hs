@@ -1,24 +1,25 @@
+import System.Exit
+import System.IO
 import XMonad
 import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
-import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.SetWMName
-import XMonad.Layout.IM
 import XMonad.Layout.Grid
+import XMonad.Layout.IM
 import XMonad.Layout.NoBorders
 import XMonad.Layout.PerWorkspace
 import XMonad.Layout.Reflect
 import XMonad.Layout.Tabbed
+import XMonad.Layout.TwoPane
+import XMonad.Prompt
 import XMonad.Util.Cursor
 import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Util.Replace
 import XMonad.Util.Run(spawnPipe)
-import XMonad.Prompt
-import System.Exit 
-import System.IO
-import qualified XMonad.StackSet as W
 import qualified Data.Map as M
+import qualified XMonad.StackSet as W
 
 myFont                      = "xft:Fira Code-10:bold"
 ppTitleFgColor              = "#FFFFFF"
@@ -42,18 +43,20 @@ myFocusedBorderColor        = "#0088CC"
 
 myBorderWidth               = 4
 myModMask                   = mod4Mask
-myTerminal                  = "terminator"
+myTerminal                  = "kitty"
 myWorkspaces                = ["Q","W","E","R","T","Y","U","I","O", "P"]
 
 myManageHook                = composeAll
-    [ className             =? "Telegram"       --> doShift "P"
+    [ className             =? "TelegramDesktop"       --> doShift "P"
+    , className             =? "Slack"          --> doShift "P"
     , className             =? "firefox"        --> doShift "W"
+    , className             =? "Toolkit"        --> doFloat
     ]
 
-myLayoutHook                = onWorkspace "Q" termLayout $ onWorkspace "W" webLayout $ onWorkspace "R" tabbedLayout $ defaultLayout
+myLayoutHook                = onWorkspace "Q" termLayout $ onWorkspace "W" webLayout $  onWorkspace "P" messageLayout $ defaultLayout
     where
-        defaultLayout       = avoidStruts ( tall ||| Mirror tall ||| Full )
-            where 
+        defaultLayout       = avoidStruts ( TwoPane (3/100) (1/2) ||| tall ||| Full )
+            where
                 tall        = Tall nmaster delta ratio
                 nmaster     = 1
                 ratio       = 2/3
@@ -62,29 +65,20 @@ myLayoutHook                = onWorkspace "Q" termLayout $ onWorkspace "W" webLa
         termLayout          = avoidStruts ( Grid ||| Full )
 
         webLayout           = avoidStruts ( Mirror tall ||| tall ||| Full)
-            where 
+            where
                 tall        = Tall nmaster delta ratio
                 nmaster     = 1
                 ratio       = 3/4
-                delta       = 2/100 
+                delta       = 2/100
 
-        tabbedLayout        = avoidStruts ( tabbed shrinkText tabConfig ||| Full) 
-
-tabConfig = defaultTheme 
-    { fontName              = myFont
-    , activeBorderColor     = "#1793D1"
-    , activeTextColor       = "#333333"
-    , activeColor           = "#1793D1"
-    , inactiveBorderColor   = "#333333"
-    , inactiveTextColor     = "#FFFFFF"
-    , inactiveColor         = "#333333"
-    }
+        messageLayout       = avoidStruts ( TwoPane (3/100) (1/2) ||| Full )
 
 myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
     [ ((0, 0x1008ff12), spawn "amixer set Master toggle")
     , ((0, 0x1008ff11), spawn "amixer set Master 5%-")
     , ((0, 0x1008ff13), spawn "amixer set Master 5%+")
     , ((modMask, xK_space), spawn "rofi -show run")
+    , ((modMask, xK_c), spawn "clipmenu")
     , ((modMask, xK_s), spawn "scrot --delay 1 ~/Pictures/screenshots/screen_%Y-%m-%d %H-%M-%S.png")
     , ((modMask .|. shiftMask, xK_s), spawn "scrot --select ~/Pictures/screenshots/window_%Y-%m-%d %H-%M-%S.png")
     , ((modMask, xK_Return), spawn $ XMonad.terminal conf)
@@ -121,12 +115,12 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
     ]
 
 myStartupHook :: X ()
-myStartupHook = do 
+myStartupHook = do
     setDefaultCursor xC_left_ptr >> setWMName "LG3D"
     spawn "~/.xmonad/autostart"
 
 main = do
-    xmonad $ docks $ ewmh def 
+    xmonad $ docks $ ewmh def
         { terminal              = myTerminal
         , borderWidth           = myBorderWidth
         , focusFollowsMouse     = myFocusFollowsMouse
@@ -136,7 +130,6 @@ main = do
         , focusedBorderColor    = myFocusedBorderColor
         , keys                  = myKeys
         , mouseBindings         = myMouseBindings
-        , logHook               = ewmhDesktopsLogHook
         , layoutHook            = myLayoutHook
         , manageHook            = manageDocks <+> myManageHook
         , startupHook           = myStartupHook
